@@ -1,0 +1,69 @@
+# ==============================================================================
+# docker-compose.yml —— 把"那串很长的 docker run"固化成文件
+#
+# 为什么用 compose 而不是手敲 docker run：
+#   参数一旦超过 5 个就没人记得住、也复制不对。写成文件之后：
+#   参数可评审、可进 git、换机器一键复现。
+#
+#   docker compose up -d          # 起
+#   docker compose logs -f        # 看日志
+#   docker compose down           # 停
+# ==============================================================================
+
+name: dogbreed-serve
+
+services:
+  serve:
+    image: dogbreed-serve:1.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dogbreed-serve
+
+    # ------------------------------------------------------------------
+    # restart: always —— 容器退出就重启，且 Docker daemon 启动时也会拉起它
+    #   → 服务器重启后服务自己回来，不用人登上去敲命令
+    # 注意：和 systemd 二选一，两个都配会打架（systemd 想停、Docker 想拉起）
+    # ------------------------------------------------------------------
+    restart: always
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      # 应用层旋钮（config.py 里用 os.getenv 读的，这里覆盖）
+      - ORT_INTRA_OP_THREADS=1
+      - MAX_INFLIGHT=8
+      - MAX_BATCH=32
+      - INFER_TIMEOUT_S=3.0
+      - QUEUE_WAIT_S=2.0
+      - DOGBREED_LOG_JSON=1
+      - TZ=Asia/Shanghai
+
+    volumes:
+      # 两个运行期写入的目录挂出来：宿主机断电/重建容器后，日志和用户反馈都还在
+      - ./logs:/app/logs
+      - ./feedback:/app/feedback
+
+    # 资源上限：不给上限的话，一个内存泄漏能把整台机器拖死。
+    # 单进程 + 23MB 模型，实测常驻约 250MB，给 512MB 绰绰有余。
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 512M
+
+    # 日志轮转：不设的话，一个跑几个月的服务能把云盘写满
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s

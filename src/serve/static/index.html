@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>犬种分类推理服务</title>
+<style>
+  body{font:14px/1.6 system-ui,"Microsoft YaHei",sans-serif;max-width:760px;margin:32px auto;padding:0 16px;color:#1f2328}
+  h2{margin:0 0 4px}.sub{color:#656d76;font-size:12px;margin-bottom:20px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  button{padding:7px 14px;border:1px solid #d0d7de;border-radius:6px;background:#f6f8fa;cursor:pointer}
+  button:hover{background:#eef1f4}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.fb{padding:3px 9px;font-size:12px;border-color:#d0d7de;background:#fff}
+  button.fb:hover{border-color:#0969da;color:#0969da}
+  #box{border:1px dashed #d0d7de;border-radius:8px;padding:16px;background:#fbfcfd;min-height:60px}
+  .bar{height:18px;background:#0969da;border-radius:3px;transition:width .3s}
+  .item{margin:10px 0;padding-bottom:8px;border-bottom:1px solid #eaeef2}
+  .k{display:flex;justify-content:space-between;font-size:13px}
+  .muted{color:#656d76}
+  .rid{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:#656d76}
+  pre{background:#0d1117;color:#e6edf3;padding:12px;border-radius:8px;overflow:auto;font-size:12px;max-height:240px}
+  #dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#d0d7de}
+  .toast{position:fixed;right:16px;bottom:16px;background:#1f2328;color:#fff;padding:10px 14px;
+         border-radius:8px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+<h2>犬种分类推理服务</h2>
+<div class="sub"><span id="dot"></span> <span id="health" class="muted">检查服务状态…</span></div>
+
+<div class="row">
+  <input id="f" type="file" accept="image/*" multiple>
+  <button id="b1" onclick="run(0)">单张推理 /predict</button>
+  <button id="b2" onclick="run(1)">批量推理 /predict_batch</button>
+</div>
+
+<div id="box"><span class="muted">选一张狗的图片，然后点上面的按钮。</span></div>
+<pre id="raw">（原始 JSON 会显示在这里）</pre>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let LAST = {};   // 文件名 -> {file, predicted, confidence, topk}
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 2200);
+}
+
+// 页面一打开先探一次 /health：这就是健康检查接口的日常用法
+fetch('/health').then(r => r.json()).then(j => {
+  $('dot').style.background = '#1a7f37';
+  $('health').textContent =
+    `服务在线 · ${j.model.file} · ${j.model.variant ?? ''} · 输入 ${j.model.input_shape.join('x')} · 已运行 ${j.uptime_s}s`;
+}).catch(() => {
+  $('dot').style.background = '#cf222e';
+  $('health').textContent = '服务未启动';
+});
+
+async function run(isBatch) {
+  const fs = $('f').files;
+  if (!fs.length) { alert('请先选择图片'); return; }
+  const fd = new FormData();
+  isBatch ? [...fs].forEach(f => fd.append('files', f)) : fd.append('file', fs[0]);
+  const url = isBatch ? '/predict_batch' : '/predict';
+
+  $('b1').disabled = $('b2').disabled = true;
+  $('box').innerHTML = '请求中…';
+  const t0 = performance.now();
+  try {
+    const r = await fetch(url, { method: 'POST', body: fd });
+    const j = await r.json();
+    const ms = (performance.now() - t0).toFixed(0);
+    $('raw').textContent = JSON.stringify(j, null, 2);
+    if (r.ok) render(j, isBatch, ms, [...fs]);
+    else $('box').innerHTML = `<b style="color:#cf222e">HTTP ${r.status}</b> ${j.error?.message ?? ''}`;
+  } catch (e) {
+    $('box').innerHTML = `<b style="color:#cf222e">请求失败</b> ${e}`;
+  } finally {
+    $('b1').disabled = $('b2').disabled = false;
+  }
+}
+
+function render(j, isBatch, ms, files) {
+  const items = isBatch ? j.results : [{ ...j, filename: j.filename }];
+  // 记下每张图和它的预测结果 —— 用户点"认错了"时要靠这份映射回传给 /feedback
+  items.forEach((it, i) => {
+    LAST[it.filename ?? files[i]?.name ?? String(i)] = {
+      file: files[i], predicted: it.label, confidence: it.confidence, topk: it.topk ?? null,
+    };
+  });
+  $('box').innerHTML =
+    `<div class="muted" style="margin-bottom:8px">${items.length} 张 · 端到端 ${ms}ms · `
+    + `服务端推理 ${j.infer_ms ?? items[0].timing?.infer_ms ?? '-'}ms `
+    + `${isBatch ? `· 单张均摊 ${j.per_image_ms}ms` : ''} · request_id <span class="rid">${j.request_id}</span></div>`
+    + items.map((it, i) => {
+        const key = it.filename ?? files[i]?.name ?? String(i);
+        return `<div class="item">
+          <div class="k"><span>${it.filename ?? ''} → <b>${it.label_cn ?? it.label}</b>
+            <span class="muted">${it.label}</span></span>
+            <span>${(it.confidence * 100).toFixed(1)}%</span></div>
+          <div style="background:#eaeef2;border-radius:3px">
+            <div class="bar" style="width:${it.confidence * 100}%"></div></div>
+          <div style="margin-top:6px" class="row">
+            <span class="muted" style="font-size:12px">认错了？正确答案：</span>
+            ${['havanese','miniature_pinscher','pomeranian','shiba_inu','yorkshire_terrier']
+              .filter(c => c !== it.label)
+              .map(c => `<button class="fb" onclick="sendFb('${key}','${c}')">${c}</button>`).join('')}
+            <button class="fb" onclick="sendFb('${key}', '')">不知道，但肯定不对</button>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+async function sendFb(key, correctLabel) {
+  const st = LAST[key];
+  if (!st) { toast('找不到这张图的预测记录'); return; }
+  const fd = new FormData();
+  fd.append('image', st.file);
+  fd.append('predicted', st.predicted);
+  fd.append('confidence', st.confidence);
+  fd.append('topk', JSON.stringify(st.topk ?? []));
+  fd.append('src', 'web');
+  if (correctLabel) fd.append('user_label', correctLabel);
+  else fd.append('note', '用户标记为错误，未提供正确类别');
+
+  try {
+    const r = await fetch('/feedback', { method: 'POST', body: fd });
+    const j = await r.json();
+    toast(r.ok ? '谢谢！这条样本已进入待复核队列' : `反馈失败：${j.error?.message ?? r.status}`);
+  } catch (e) { toast(`反馈失败：${e}`); }
+}
+</script>
+</body>
+</html>

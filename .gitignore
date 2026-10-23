@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store
+
+# 运行期产物（每次跑都会重新生成）
+artifacts/
+datasets/
+feedback/inbox/
+feedback/feedback-*.jsonl
+logs/
+*.log
+
+# 训练中间产物：体积大（每个 ckpt 90MB），且可由种子复现
+weights/*.pth
+weights/*.pt
+
+# ⚠️ 但 *.onnx 必须入库 —— README 的验收标准是
+#    「clone 之后不训练、不下数据也能把服务跑起来」，靠的就是这份 INT8 权重（22.7MB）。
+#    GitHub 单文件建议 <50MB，我们在预算内，不需要 git-lfs。
+
+# 性能报告随跑随变，不进仓库（figures/ 里的图是成品，不在此列）
+outputs/
+feedback/review_queue.csv
+.pytest_cache/

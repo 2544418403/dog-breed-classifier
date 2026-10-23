@@ -1,0 +1,517 @@
+{
+  "env": {
+    "python": "3.13.13",
+    "torch": "2.9.1+cu126",
+    "cpu_physical": 14,
+    "cpu_logical": 20,
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "n_samples": 546
+  },
+  "cpu": [
+    {
+      "name": "torch-fp32",
+      "kind": "torch",
+      "size_mb": 90.02,
+      "load_ms": 2180.1,
+      "threads": 1,
+      "latency": {
+        "mean_ms": 14.497,
+        "p50_ms": 14.247,
+        "p95_ms": 16.149,
+        "p99_ms": 18.05,
+        "min_ms": 12.928,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 13.95,
+          "img_per_s": 71.7,
+          "per_img_ms": 13.95
+        },
+        "4": {
+          "batch_ms": 42.992,
+          "img_per_s": 93.0,
+          "per_img_ms": 10.748
+        },
+        "8": {
+          "batch_ms": 77.775,
+          "img_per_s": 102.9,
+          "per_img_ms": 9.722
+        },
+        "16": {
+          "batch_ms": 147.687,
+          "img_per_s": 108.3,
+          "per_img_ms": 9.23
+        },
+        "32": {
+          "batch_ms": 314.411,
+          "img_per_s": 101.8,
+          "per_img_ms": 9.825
+        }
+      },
+      "acc": 0.8919,
+      "flip_rate": 0.0,
+      "max_logit_diff": 0.0
+    },
+    {
+      "name": "onnx-fp32",
+      "kind": "onnx",
+      "size_mb": 89.64,
+      "load_ms": 211.9,
+      "threads": 1,
+      "latency": {
+        "mean_ms": 9.636,
+        "p50_ms": 8.6,
+        "p95_ms": 15.398,
+        "p99_ms": 18.428,
+        "min_ms": 7.142,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 8.369,
+          "img_per_s": 119.5,
+          "per_img_ms": 8.369
+        },
+        "4": {
+          "batch_ms": 30.055,
+          "img_per_s": 133.1,
+          "per_img_ms": 7.514
+        },
+        "8": {
+          "batch_ms": 56.849,
+          "img_per_s": 140.7,
+          "per_img_ms": 7.106
+        },
+        "16": {
+          "batch_ms": 120.196,
+          "img_per_s": 133.1,
+          "per_img_ms": 7.512
+        },
+        "32": {
+          "batch_ms": 214.527,
+          "img_per_s": 149.2,
+          "per_img_ms": 6.704
+        }
+      },
+      "acc": 0.8919,
+      "flip_rate": 0.0,
+      "max_logit_diff": 2e-05
+    },
+    {
+      "name": "torch-int8-dyn",
+      "kind": "torch",
+      "size_mb": 89.99,
+      "load_ms": 354.1,
+      "threads": 1,
+      "latency": {
+        "mean_ms": 16.94,
+        "p50_ms": 16.181,
+        "p95_ms": 24.286,
+        "p99_ms": 26.2,
+        "min_ms": 12.869,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 16.802,
+          "img_per_s": 59.5,
+          "per_img_ms": 16.802
+        },
+        "4": {
+          "batch_ms": 52.267,
+          "img_per_s": 76.5,
+          "per_img_ms": 13.067
+        },
+        "8": {
+          "batch_ms": 90.256,
+          "img_per_s": 88.6,
+          "per_img_ms": 11.282
+        },
+        "16": {
+          "batch_ms": 174.601,
+          "img_per_s": 91.6,
+          "per_img_ms": 10.913
+        },
+        "32": {
+          "batch_ms": 329.177,
+          "img_per_s": 97.2,
+          "per_img_ms": 10.287
+        }
+      },
+      "acc": 0.8919,
+      "flip_rate": 0.0037,
+      "max_logit_diff": 0.066335
+    },
+    {
+      "name": "onnx-int8-dyn",
+      "kind": "onnx",
+      "size_mb": 22.59,
+      "load_ms": 80.4,
+      "threads": 1,
+      "latency": {
+        "mean_ms": 101.465,
+        "p50_ms": 99.985,
+        "p95_ms": 125.712,
+        "p99_ms": 129.688,
+        "min_ms": 82.874,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 86.056,
+          "img_per_s": 11.6,
+          "per_img_ms": 86.056
+        },
+        "4": {
+          "batch_ms": 336.019,
+          "img_per_s": 11.9,
+          "per_img_ms": 84.005
+        },
+        "8": {
+          "batch_ms": 674.101,
+          "img_per_s": 11.9,
+          "per_img_ms": 84.263
+        },
+        "16": {
+          "batch_ms": 1350.424,
+          "img_per_s": 11.8,
+          "per_img_ms": 84.402
+        },
+        "32": {
+          "batch_ms": 2687.072,
+          "img_per_s": 11.9,
+          "per_img_ms": 83.971
+        }
+      },
+      "acc": 0.8333,
+      "flip_rate": 0.1429,
+      "max_logit_diff": 3.808814
+    },
+    {
+      "name": "onnx-int8-static",
+      "kind": "onnx",
+      "size_mb": 22.66,
+      "load_ms": 72.0,
+      "threads": 1,
+      "latency": {
+        "mean_ms": 2.65,
+        "p50_ms": 2.574,
+        "p95_ms": 3.266,
+        "p99_ms": 3.408,
+        "min_ms": 2.095,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 2.507,
+          "img_per_s": 398.8,
+          "per_img_ms": 2.507
+        },
+        "4": {
+          "batch_ms": 7.786,
+          "img_per_s": 513.7,
+          "per_img_ms": 1.947
+        },
+        "8": {
+          "batch_ms": 14.558,
+          "img_per_s": 549.5,
+          "per_img_ms": 1.82
+        },
+        "16": {
+          "batch_ms": 27.292,
+          "img_per_s": 586.3,
+          "per_img_ms": 1.706
+        },
+        "32": {
+          "batch_ms": 56.13,
+          "img_per_s": 570.1,
+          "per_img_ms": 1.754
+        }
+      },
+      "acc": 0.8901,
+      "flip_rate": 0.0238,
+      "max_logit_diff": 1.467132
+    },
+    {
+      "name": "torch-fp32",
+      "kind": "torch",
+      "size_mb": 90.02,
+      "load_ms": 215.1,
+      "threads": 4,
+      "latency": {
+        "mean_ms": 9.185,
+        "p50_ms": 9.021,
+        "p95_ms": 11.059,
+        "p99_ms": 11.539,
+        "min_ms": 7.434,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 8.686,
+          "img_per_s": 115.1,
+          "per_img_ms": 8.686
+        },
+        "4": {
+          "batch_ms": 22.629,
+          "img_per_s": 176.8,
+          "per_img_ms": 5.657
+        },
+        "8": {
+          "batch_ms": 33.279,
+          "img_per_s": 240.4,
+          "per_img_ms": 4.16
+        },
+        "16": {
+          "batch_ms": 52.727,
+          "img_per_s": 303.4,
+          "per_img_ms": 3.295
+        },
+        "32": {
+          "batch_ms": 102.273,
+          "img_per_s": 312.9,
+          "per_img_ms": 3.196
+        }
+      },
+      "acc": 0.8919,
+      "flip_rate": 0.0,
+      "max_logit_diff": 0.0
+    },
+    {
+      "name": "onnx-fp32",
+      "kind": "onnx",
+      "size_mb": 89.64,
+      "load_ms": 200.7,
+      "threads": 4,
+      "latency": {
+        "mean_ms": 3.558,
+        "p50_ms": 3.47,
+        "p95_ms": 4.517,
+        "p99_ms": 5.79,
+        "min_ms": 2.952,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 3.296,
+          "img_per_s": 303.4,
+          "per_img_ms": 3.296
+        },
+        "4": {
+          "batch_ms": 7.858,
+          "img_per_s": 509.0,
+          "per_img_ms": 1.965
+        },
+        "8": {
+          "batch_ms": 15.638,
+          "img_per_s": 511.6,
+          "per_img_ms": 1.955
+        },
+        "16": {
+          "batch_ms": 27.53,
+          "img_per_s": 581.2,
+          "per_img_ms": 1.721
+        },
+        "32": {
+          "batch_ms": 53.781,
+          "img_per_s": 595.0,
+          "per_img_ms": 1.681
+        }
+      },
+      "acc": 0.8919,
+      "flip_rate": 0.0,
+      "max_logit_diff": 2e-05
+    },
+    {
+      "name": "torch-int8-dyn",
+      "kind": "torch",
+      "size_mb": 89.99,
+      "load_ms": 313.8,
+      "threads": 4,
+      "latency": {
+        "mean_ms": 9.429,
+        "p50_ms": 9.335,
+        "p95_ms": 10.902,
+        "p99_ms": 11.538,
+        "min_ms": 7.664,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 8.765,
+          "img_per_s": 114.1,
+          "per_img_ms": 8.765
+        },
+        "4": {
+          "batch_ms": 22.893,
+          "img_per_s": 174.7,
+          "per_img_ms": 5.723
+        },
+        "8": {
+          "batch_ms": 34.558,
+          "img_per_s": 231.5,
+          "per_img_ms": 4.32
+        },
+        "16": {
+          "batch_ms": 53.91,
+          "img_per_s": 296.8,
+          "per_img_ms": 3.369
+        },
+        "32": {
+          "batch_ms": 98.239,
+          "img_per_s": 325.7,
+          "per_img_ms": 3.07
+        }
+      },
+      "acc": 0.8919,
+      "flip_rate": 0.0037,
+      "max_logit_diff": 0.066335
+    },
+    {
+      "name": "onnx-int8-dyn",
+      "kind": "onnx",
+      "size_mb": 22.59,
+      "load_ms": 70.1,
+      "threads": 4,
+      "latency": {
+        "mean_ms": 30.867,
+        "p50_ms": 28.772,
+        "p95_ms": 42.091,
+        "p99_ms": 45.785,
+        "min_ms": 24.915,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 36.168,
+          "img_per_s": 27.6,
+          "per_img_ms": 36.168
+        },
+        "4": {
+          "batch_ms": 144.69,
+          "img_per_s": 27.6,
+          "per_img_ms": 36.173
+        },
+        "8": {
+          "batch_ms": 283.704,
+          "img_per_s": 28.2,
+          "per_img_ms": 35.463
+        },
+        "16": {
+          "batch_ms": 603.93,
+          "img_per_s": 26.5,
+          "per_img_ms": 37.746
+        },
+        "32": {
+          "batch_ms": 1144.928,
+          "img_per_s": 27.9,
+          "per_img_ms": 35.779
+        }
+      },
+      "acc": 0.8333,
+      "flip_rate": 0.1429,
+      "max_logit_diff": 3.808814
+    },
+    {
+      "name": "onnx-int8-static",
+      "kind": "onnx",
+      "size_mb": 22.66,
+      "load_ms": 62.4,
+      "threads": 4,
+      "latency": {
+        "mean_ms": 2.549,
+        "p50_ms": 2.452,
+        "p95_ms": 3.316,
+        "p99_ms": 4.08,
+        "min_ms": 1.708,
+        "n": 200
+      },
+      "batch": {
+        "1": {
+          "batch_ms": 2.126,
+          "img_per_s": 470.4,
+          "per_img_ms": 2.126
+        },
+        "4": {
+          "batch_ms": 4.972,
+          "img_per_s": 804.5,
+          "per_img_ms": 1.243
+        },
+        "8": {
+          "batch_ms": 7.985,
+          "img_per_s": 1001.9,
+          "per_img_ms": 0.998
+        },
+        "16": {
+          "batch_ms": 14.397,
+          "img_per_s": 1111.4,
+          "per_img_ms": 0.9
+        },
+        "32": {
+          "batch_ms": 27.945,
+          "img_per_s": 1145.1,
+          "per_img_ms": 0.873
+        }
+      },
+      "acc": 0.8901,
+      "flip_rate": 0.0238,
+      "max_logit_diff": 1.467133
+    }
+  ],
+  "gpu": {
+    "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "runs": [
+      {
+        "name": "cuda-fp32",
+        "rows": [
+          {
+            "bs": 1,
+            "batch_ms": 5.65,
+            "per_img_ms": 5.65,
+            "img_per_s": 177.0
+          },
+          {
+            "bs": 8,
+            "batch_ms": 4.712,
+            "per_img_ms": 0.589,
+            "img_per_s": 1697.9
+          },
+          {
+            "bs": 32,
+            "batch_ms": 7.706,
+            "per_img_ms": 0.241,
+            "img_per_s": 4152.9
+          }
+        ],
+        "acc": 0.8919,
+        "peak_mem_mb": 182.7
+      },
+      {
+        "name": "cuda-fp16",
+        "rows": [
+          {
+            "bs": 1,
+            "batch_ms": 6.326,
+            "per_img_ms": 6.326,
+            "img_per_s": 158.1
+          },
+          {
+            "bs": 8,
+            "batch_ms": 6.338,
+            "per_img_ms": 0.792,
+            "img_per_s": 1262.3
+          },
+          {
+            "bs": 32,
+            "batch_ms": 6.357,
+            "per_img_ms": 0.199,
+            "img_per_s": 5033.5
+          }
+        ],
+        "acc": 0.8919,
+        "peak_mem_mb": 205.1
+      }
+    ]
+  }
+}

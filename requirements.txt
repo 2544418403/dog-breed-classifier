@@ -1,0 +1,10 @@
+# 服务运行时依赖（注意：这里没有 torch！）
+# 模型已经导出成 ONNX INT8，线上不需要训练框架。
+# 完整依赖定义见 pyproject.toml，此文件只是 `pip install -r` 的快捷方式。
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9      # 没有它，FastAPI 收不到 multipart 上传的文件
+onnxruntime>=1.18            # ~40MB；换成 torch 是 200MB~2.5GB
+pillow>=10.0
+numpy>=1.26
+requests>=2.31               # 压测 / 冒烟脚本

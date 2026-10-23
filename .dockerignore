@@ -1,0 +1,30 @@
+# 不要让这些进 build context —— 一个 202MB 的仓库，构建时有 179MB 是没用的。
+.venv
+__pycache__
+*.pyc
+.git
+.github
+.pytest_cache
+.mypy_cache
+
+# 运行时产物（容器内由 volume 挂载，不需要打进镜像）
+logs/
+feedback/inbox
+feedback/feedback-*.jsonl
+feedback/review_queue.csv
+artifacts/
+datasets/
+outputs/
+
+# 训练产物与中间文件
+*.pth
+*.pt
+*.parquet
+*.tar.gz
+*.part
+
+# 文档与素材（镜像里用不到）
+docs/
+figures/
+*.md
+!README.md
