@@ -27,6 +27,7 @@ import argparse
 import json
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -54,10 +55,21 @@ PURPLE = (163, 113, 247)
 FONT_CJK = "C:/Windows/Fonts/msyh.ttc"
 FONT_MONO = "C:/Windows/Fonts/consola.ttf"
 
+# 字体缓存：ImageFont.truetype() 每调用一次都要读一次字体文件，
+# 如果每帧每行都 new 一个，渲染速度会慢到不可用（实测慢 30 倍以上）。
+_FONTS: dict[tuple[str, int], ImageFont.FreeTypeFont] = {}
+
+
+def _f(path: str, size: int):
+    key = (path, size)
+    if key not in _FONTS:
+        _FONTS[key] = ImageFont.truetype(path, size)
+    return _FONTS[key]
+
 
 def font(size: int, mono: bool = False):
     try:
-        return ImageFont.truetype(FONT_MONO if mono else FONT_CJK, size)
+        return _f(FONT_MONO if mono else FONT_CJK, size)
     except Exception:  # noqa: BLE001
         return ImageFont.load_default()
 
@@ -130,10 +142,11 @@ def draw_mixed(d, xy, text: str, fill, size: int = 21):
     """代码行的中英混排：ASCII 用 consola（对齐要紧），中文回落到雅黑。
 
     真实输出里带 label_cn（中文品种名），如果全用 consola 渲染会变成豆腐块 □□□。
+    字体对象走 _f() 缓存，绝不能在这里重新 truetype。
     """
     x, y = xy
-    mono = ImageFont.truetype(FONT_MONO, size)
-    cjk = ImageFont.truetype(FONT_CJK, size)
+    mono = _f(FONT_MONO, size)
+    cjk = _f(FONT_CJK, size)
     buf_ascii = ""
     def flush_ascii(x):
         nonlocal buf_ascii
@@ -215,8 +228,8 @@ def capture(base: str) -> dict:
                        files={"file": (p.name, p.read_bytes(), "image/jpeg")}).json()
             preds.append((r["filename"], r["label_cn"], r["confidence"],
                           r["timing"]["infer_ms"]))
-        files = [("files", (ROOT / "assets" / f"{n}.jpg").name,
-                  (ROOT / "assets" / f"{n}.jpg").read_bytes(), "image/jpeg")
+        files = [("files", ((ROOT / "assets" / f"{n}.jpg").name,
+                            (ROOT / "assets" / f"{n}.jpg").read_bytes(), "image/jpeg"))
                  for n in names if (ROOT / "assets" / f"{n}.jpg").exists()]
         b = s.post(f"{base}/predict_batch", files=files, timeout=20).json()
         m = s.get(f"{base}/metrics?window=200", timeout=5).json()["serve"]
@@ -407,16 +420,16 @@ def s04(d, t, D):
 @scene(26.0, "05 现场调用")
 def s05(d, t, D):
     h = D["health"]
+    hm = h.get("model", {})          # /health 的真实结构：{"model": {"file":..., "variant":..., "load_ms":...}}
     scene_header(d, "04 / 现场", "真的有一条能对外服务的 HTTP 接口",
-                 f"GET /health   model={h.get('model', h.get('model_file', '?'))}"
-                 f"   input={h.get('input', '?')}")
+                 f"GET /health   model={hm.get('file', '?')}   input={hm.get('input_shape', '?')}")
 
-    boot = h.get("boot_ms", h.get("model_load_ms", 0))
+    boot = hm.get("load_ms", 0)
     lines = [
         ("$ curl -s localhost:8000/health", GREEN),
         ('{"status": "ok", "model": "%s", "variant": "%s",'
-         % (h.get("model", "dogbreed_resnet50_64_int8.onnx"), h.get("variant", "int8")), DIM),
-        (' "input_shape": ["batch", 3, 64, 64], "boot_ms": %.0f}' % boot, DIM),
+         % (hm.get("file", "dogbreed_resnet50_64_int8.onnx"), hm.get("variant", "int8")), DIM),
+        (' "input_shape": ["batch", 3, 64, 64], "load_ms": %.0f}' % boot, DIM),
         ("", DIM),
         ("$ curl -X POST -F 'file=@assets/shiba.jpg' localhost:8000/predict", GREEN),
     ]
@@ -634,8 +647,23 @@ def build(args) -> None:
            "-s", f"{W}x{H}", "-r", str(FPS), "-i", "pipe:0",
            "-c:v", "libx264", "-preset", "medium", "-crf", "22",
            "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(OUT)]
+
+    # stderr 必须在后台线程里持续排空：ffmpeg 每帧都往 stderr 打进度，
+    # 如果只用 PIPE 接着而不读，64KB 缓冲一满，ffmpeg 阻塞写、
+    # 主进程阻塞 wait —— 双方死锁（这个坑在这里真实踩过一次）。
+    stderr_buf: list[bytes] = []
+
+    def _drain(stream):
+        while True:
+            chunk = stream.read1(65536) if hasattr(stream, "read1") else stream.read(65536)
+            if not chunk:
+                break
+            stderr_buf.append(chunk)
+
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                             stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    drain_thread = threading.Thread(target=_drain, args=(proc.stderr,), daemon=True)
+    drain_thread.start()
 
     t0 = time.time()
     n = 0
@@ -657,10 +685,10 @@ def build(args) -> None:
     finally:
         proc.stdin.close()
     proc.wait()
+    drain_thread.join(timeout=10)
 
-    err = ""
     if proc.returncode != 0:
-        err = (proc.stderr.read() or b"").decode("utf-8", "replace")[-1500:]
+        err = b"".join(stderr_buf).decode("utf-8", "replace")[-1500:]
         print(f"[!] ffmpeg 失败：{err}", file=sys.stderr)
         sys.exit(3)
 
