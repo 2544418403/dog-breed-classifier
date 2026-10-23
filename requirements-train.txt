@@ -12,3 +12,5 @@ onnx>=1.15
 onnxruntime>=1.18            # 导出时要和 torch 对拍
 pillow>=10.0
 pyarrow>=12.0                # 读取 Oxford-IIIT Pet 的 parquet
+imageio-ffmpeg>=0.5          # scripts/make_demo_video.py 用（自带 ffmpeg 二进制）
+pytest>=8.0                  # tests/
